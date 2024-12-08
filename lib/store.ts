@@ -68,7 +68,7 @@ interface EditorState {
   createFile: (
     parentId: string | null,
     name: string,
-    type: "file" | "folder"
+    type: "file" | "folder",
   ) => void;
   deleteFile: (id: string) => void;
   updateFile: (id: string, content: string) => void;

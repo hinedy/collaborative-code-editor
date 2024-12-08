@@ -26,8 +26,8 @@ export default function EditorRoomPage() {
   }, [roomId, joinRoom, leaveRoom]);
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between gap-4 mb-4">
+    <div className="flex h-full flex-col">
+      <div className="mb-4 flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Room: {roomId}</span>
         </div>

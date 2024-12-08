@@ -20,12 +20,12 @@ export function ProjectList() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="mb-8 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Your Projects</h1>
         <CreateProjectDialog />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
           <Card key={project.id}>
             <CardHeader>
@@ -38,7 +38,7 @@ export function ProjectList() {
               <p className="text-sm text-muted-foreground">
                 Last updated {formatDistanceToNow(project.updatedAt)} ago
               </p>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="mt-2 flex items-center gap-2">
                 <Users className="h-4 w-4" />
                 <span className="text-sm">{project.files.length} files</span>
               </div>

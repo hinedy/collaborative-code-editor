@@ -1,7 +1,13 @@
-"use client"
+"use client";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useEditorStore } from "@/lib/store"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useEditorStore } from "@/lib/store";
 
 const LANGUAGES = [
   { value: "typescript", label: "TypeScript" },
@@ -10,10 +16,10 @@ const LANGUAGES = [
   { value: "java", label: "Java" },
   { value: "cpp", label: "C++" },
   { value: "rust", label: "Rust" },
-]
+];
 
 export function LanguageSelect() {
-  const { language, setLanguage } = useEditorStore()
+  const { language, setLanguage } = useEditorStore();
 
   return (
     <Select value={language} onValueChange={setLanguage}>
@@ -28,5 +34,5 @@ export function LanguageSelect() {
         ))}
       </SelectContent>
     </Select>
-  )
+  );
 }

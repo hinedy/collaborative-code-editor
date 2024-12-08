@@ -7,8 +7,8 @@ import { useClerk } from "@clerk/nextjs";
 
 export default function EditorPage() {
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-end gap-4 mb-4">
+    <div className="flex h-full flex-col">
+      <div className="mb-4 flex items-center justify-end gap-4">
         <LanguageSelect />
         <ThemeToggle />
       </div>

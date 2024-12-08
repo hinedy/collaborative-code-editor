@@ -7,7 +7,7 @@ export const socket = io(
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
-  }
+  },
 );
 
 export const connectSocket = () => {

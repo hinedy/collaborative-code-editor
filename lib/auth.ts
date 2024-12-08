@@ -1,12 +1,12 @@
-import { currentUser } from "@clerk/nextjs"
-import { redirect } from "next/navigation"
+import { currentUser } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
 
 export async function requireAuth() {
-  const user = await currentUser()
-  
+  const user = await currentUser();
+
   if (!user) {
-    redirect("/sign-in")
+    redirect("/sign-in");
   }
-  
-  return user
+
+  return user;
 }

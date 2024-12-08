@@ -28,6 +28,7 @@ io.on("connection", (socket) => {
       projectId,
       participants: new Set([socket.id]),
       code: "",
+      files: new Map(),
     });
     socket.join(id);
     console.log(`Room created: ${id}`);
@@ -39,18 +40,48 @@ io.on("connection", (socket) => {
     if (room) {
       room.participants.add(socket.id);
       socket.join(roomId);
-      // Send current code to the new participant
-      socket.emit("code:init", room.code);
+      // Send current state to the new participant
+      socket.emit("room:state", {
+        code: room.code,
+        files: Array.from(room.files.entries()),
+      });
+      // Notify others
+      socket.to(roomId).emit("user:joined", socket.id);
       console.log(`User ${socket.id} joined room: ${roomId}`);
     }
   });
 
   // Handle code changes
-  socket.on("code:change", ({ roomId, code }) => {
+  socket.on("code:change", ({ roomId, fileId, code }) => {
     const room = rooms.get(roomId);
     if (room) {
-      room.code = code;
-      socket.to(roomId).emit("code:update", code);
+      room.files.set(fileId, code);
+      socket.to(roomId).emit("code:update", { fileId, code });
+    }
+  });
+
+  // Handle file operations
+  socket.on("file:create", ({ roomId, file }) => {
+    const room = rooms.get(roomId);
+    if (room) {
+      room.files.set(file.id, file);
+      socket.to(roomId).emit("file:created", file);
+    }
+  });
+
+  socket.on("file:delete", ({ roomId, fileId }) => {
+    const room = rooms.get(roomId);
+    if (room) {
+      room.files.delete(fileId);
+      socket.to(roomId).emit("file:deleted", fileId);
+    }
+  });
+
+  socket.on("file:update", ({ roomId, file }) => {
+    const room = rooms.get(roomId);
+    if (room) {
+      room.files.set(file.id, file);
+      socket.to(roomId).emit("file:updated", file);
     }
   });
 
@@ -62,6 +93,8 @@ io.on("connection", (socket) => {
       socket.leave(roomId);
       if (room.participants.size === 0) {
         rooms.delete(roomId);
+      } else {
+        socket.to(roomId).emit("user:left", socket.id);
       }
       console.log(`User ${socket.id} left room: ${roomId}`);
     }
@@ -74,6 +107,8 @@ io.on("connection", (socket) => {
         room.participants.delete(socket.id);
         if (room.participants.size === 0) {
           rooms.delete(roomId);
+        } else {
+          socket.to(roomId).emit("user:left", socket.id);
         }
       }
     });

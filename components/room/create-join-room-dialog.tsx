@@ -23,7 +23,7 @@ export function CreateJoinRoomDialog() {
   const [open, setOpen] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [roomId, setRoomId] = useState("");
-  const { currentProject, createProject } = useEditorStore();
+  const { currentProject, createProject, createFile } = useEditorStore();
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +33,11 @@ export function CreateJoinRoomDialog() {
     const projectId = currentProject?.id || crypto.randomUUID();
     if (!currentProject) {
       createProject(roomName);
+
+      // Create initial project structure
+      const rootFolderId = crypto.randomUUID();
+      createFile(null, roomName, "folder");
+      createFile(rootFolderId, "index.ts", "file");
     }
 
     const newRoomId = crypto.randomUUID();
@@ -50,6 +55,7 @@ export function CreateJoinRoomDialog() {
     e.preventDefault();
     if (!roomId.trim()) return;
 
+    socket.emit("room:join", roomId);
     setOpen(false);
     router.push(`/editor/${roomId}`);
   };
