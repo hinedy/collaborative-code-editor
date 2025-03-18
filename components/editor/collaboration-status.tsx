@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { socket } from "@/lib/socket";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -17,21 +16,6 @@ interface Collaborator {
 
 export function CollaborationStatus() {
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-
-  useEffect(() => {
-    socket.on("collaborator:join", (user: Collaborator) => {
-      setCollaborators((prev) => [...prev, user]);
-    });
-
-    socket.on("collaborator:leave", (userId: string) => {
-      setCollaborators((prev) => prev.filter((u) => u.id !== userId));
-    });
-
-    return () => {
-      socket.off("collaborator:join");
-      socket.off("collaborator:leave");
-    };
-  }, []);
 
   return (
     <div className="flex -space-x-2">

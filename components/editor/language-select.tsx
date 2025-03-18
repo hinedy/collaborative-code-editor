@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEditorStore } from "@/lib/store";
 
 const LANGUAGES = [
   { value: "typescript", label: "TypeScript" },
@@ -18,11 +17,15 @@ const LANGUAGES = [
   { value: "rust", label: "Rust" },
 ];
 
-export function LanguageSelect() {
-  const { language, setLanguage } = useEditorStore();
-
+export function LanguageSelect({
+  language,
+  handleLanguageChange,
+}: {
+  language: string;
+  handleLanguageChange: (value: string | undefined) => void;
+}) {
   return (
-    <Select value={language} onValueChange={setLanguage}>
+    <Select value={language} onValueChange={handleLanguageChange}>
       <SelectTrigger className="w-[180px]">
         <SelectValue placeholder="Select language" />
       </SelectTrigger>

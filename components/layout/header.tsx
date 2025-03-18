@@ -1,14 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { UserButton, useUser } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
-import { CodeIcon } from "lucide-react";
-import { CreateJoinRoomDialog } from "@/components/room/create-join-room-dialog";
+import { CodeIcon, LogOut } from "lucide-react";
+import { useAuth } from "@/providers/AuthProvider";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
 
 export function Header() {
-  const { isSignedIn } = useUser();
+  const { user } = useAuth();
+  const router = useRouter();
 
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (!error) router.push("/auth");
+  };
   return (
     <header className="border-b">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -18,27 +24,19 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-4">
-          {isSignedIn ? (
-            <>
-              <CreateJoinRoomDialog />
-              <Button variant="ghost" asChild>
-                <Link href="/dashboard">Dashboard</Link>
+          <>
+            <Button variant="ghost" asChild>
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/projects">Projects</Link>
+            </Button>
+            {user && (
+              <Button variant="outline" onClick={logout}>
+                <LogOut /> Log out
               </Button>
-              <Button variant="ghost" asChild>
-                <Link href="/projects">Projects</Link>
-              </Button>
-              <UserButton afterSignOutUrl="/" />
-            </>
-          ) : (
-            <>
-              <Button variant="ghost" asChild>
-                <Link href="/sign-in">Sign In</Link>
-              </Button>
-              <Button asChild>
-                <Link href="/sign-up">Sign Up</Link>
-              </Button>
-            </>
-          )}
+            )}
+          </>
         </nav>
       </div>
     </header>

@@ -1,15 +1,15 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
+import { NextRequest, NextResponse } from "next/server";
 
-export default authMiddleware({
-  publicRoutes: ["/", "/docs", "/sign-in", "/sign-up"],
-  afterAuth(auth, req) {
-    // Redirect to dashboard after sign in
-    if (auth.userId && req.nextUrl.pathname === "/") {
-      const dashboard = new URL("/dashboard", req.url);
-      return Response.redirect(dashboard);
-    }
-  },
-});
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next();
+  const supabase = createMiddlewareClient({ req, res });
+
+  // Refresh session or set auth cookies
+  await supabase.auth.getSession();
+
+  return res;
+}
 
 export const config = {
   matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],

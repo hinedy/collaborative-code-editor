@@ -15,21 +15,37 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/providers/AuthProvider";
 
 export function CreateProjectDialog() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [open, setOpen] = useState(false);
-  const { createProject } = useEditorStore();
+  const { projects, setProjects } = useEditorStore();
+  const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createProject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    createProject(name, description);
-    setName("");
-    setDescription("");
-    setOpen(false);
+    const { data, error } = await supabase
+      .from("projects")
+      .insert({ name: name, created_by: user?.id, description: description })
+      .select();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create project",
+        variant: "destructive",
+      });
+    } else if (data) {
+      setProjects([data[0], ...projects]);
+      setOpen(false);
+      setName("");
+    }
   };
 
   return (
@@ -38,7 +54,7 @@ export function CreateProjectDialog() {
         <Button>Create Project</Button>
       </DialogTrigger>
       <DialogContent>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={createProject}>
           <DialogHeader>
             <DialogTitle>Create New Project</DialogTitle>
             <DialogDescription>

@@ -1,204 +1,75 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { supabase } from "./supabaseClient";
 
-interface Project {
+export interface IProject {
+  created_at: string;
+  created_by: string;
+  deleted_at: string | null;
   id: string;
   name: string;
-  description?: string;
-  files: FileStructure[];
-  createdAt: Date;
-  updatedAt: Date;
+  description: string;
+  updated_at: string;
 }
 
-interface Room {
+export interface IRoom {
   id: string;
   name: string;
-  projectId: string;
-  participants: Participant[];
-  createdBy: string;
+  project_id: string;
+  created_by: string;
+  is_active: boolean;
+  deleted_at: string | null;
+  updated_at: string;
 }
 
-interface Participant {
-  id: string;
-  name: string;
-  avatar?: string;
-  role: "owner" | "editor" | "viewer";
-}
+export type RoomState = {
+  isChecking: boolean;
+  existingRoom: string | null;
+  setIsChecking: (checking: boolean) => void;
+  setExistingRoom: (roomId: string | null) => void;
+  checkActiveRoom: (projectId: string) => Promise<void>;
+};
+export const useRoomStore = create<RoomState>()(
+  persist(
+    (set) => ({
+      isChecking: false,
+      existingRoom: null,
+      setIsChecking: (checking) => set({ isChecking: checking }),
+      setExistingRoom: (roomId) => set({ existingRoom: roomId }),
+      checkActiveRoom: async (projectId) => {
+        set({ isChecking: true });
+        const { data, error } = await supabase.rpc("check_active_room", {
+          p_project_id: projectId,
+        });
 
-interface FileStructure {
-  id: string;
-  name: string;
-  content: string;
-  type: "file" | "folder";
-  language?: string;
-  children?: FileStructure[];
-}
-
-interface EditorState {
-  // Project State
-  projects: Project[];
-  currentProject: Project | null;
-  // Room State
-  currentRoom: Room | null;
-  // Editor State
-  code: string;
-  language: string;
-  theme: "vs-dark" | "vs-light";
-  files: FileStructure[];
-  activeFileId: string | null;
-  sidebarOpen: boolean;
-
-  // Project Actions
-  setProjects: (projects: Project[]) => void;
-  setCurrentProject: (project: Project | null) => void;
-  createProject: (name: string, description?: string) => void;
-  deleteProject: (id: string) => void;
-
-  // Room Actions
-  setCurrentRoom: (room: Room | null) => void;
-  joinRoom: (roomId: string) => void;
-  leaveRoom: () => void;
-
-  // Editor Actions
-  setCode: (code: string) => void;
-  setLanguage: (language: string) => void;
-  setTheme: (theme: "vs-dark" | "vs-light") => void;
-  setFiles: (files: FileStructure[]) => void;
-  setActiveFileId: (id: string | null) => void;
-  setSidebarOpen: (open: boolean) => void;
-  createFile: (
-    parentId: string | null,
-    name: string,
-    type: "file" | "folder",
-  ) => void;
-  deleteFile: (id: string) => void;
-  updateFile: (id: string, content: string) => void;
-}
-
-export const useEditorStore = create<EditorState>((set, get) => ({
-  // Initial State
-  projects: [],
-  currentProject: null,
-  currentRoom: null,
-  code: "",
-  language: "typescript",
-  theme: "vs-dark",
-  files: [],
-  activeFileId: null,
-  sidebarOpen: false,
-
-  // Project Actions
-  setProjects: (projects) => set({ projects }),
-  setCurrentProject: (project) => set({ currentProject: project }),
-  createProject: (name, description) => {
-    const newProject: Project = {
-      id: crypto.randomUUID(),
-      name,
-      description,
-      files: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    set((state) => ({
-      projects: [...state.projects, newProject],
-    }));
-  },
-  deleteProject: (id) => {
-    set((state) => ({
-      projects: state.projects.filter((p) => p.id !== id),
-    }));
-  },
-
-  // Room Actions
-  setCurrentRoom: (room) => set({ currentRoom: room }),
-  joinRoom: (roomId) => {
-    // Socket logic will be handled in the component
-    set({
-      currentRoom: {
-        id: roomId,
-        name: "",
-        projectId: "",
-        participants: [],
-        createdBy: "",
+        if (error) {
+        } else if (data?.[0]?.has_active_room) {
+          set({ existingRoom: data[0].room_id });
+        } else {
+          set({ existingRoom: null });
+        }
+        set({ isChecking: false });
       },
-    });
-  },
-  leaveRoom: () => {
-    set({ currentRoom: null });
-  },
+    }),
+    {
+      name: "room-storage", // Key to persist in localStorage
+    },
+  ),
+);
+interface EditorState {
+  projects: IProject[];
+  theme: "vs-dark" | "vs-light";
+  activeFileId: string | null;
+  setActiveFileId: (activeFileId: string | null) => void;
+  setProjects: (projects: IProject[]) => void;
+  setTheme: (theme: "vs-dark" | "vs-light") => void;
+}
 
-  // Editor Actions
-  setCode: (code) => set({ code }),
-  setLanguage: (language) => set({ language }),
-  setTheme: (theme) => set({ theme }),
-  setFiles: (files) => set({ files }),
+export const useEditorStore = create<EditorState>((set) => ({
+  projects: [],
+  theme: "vs-dark",
+  activeFileId: null,
   setActiveFileId: (activeFileId) => set({ activeFileId }),
-  setSidebarOpen: (sidebarOpen) => set({ sidebarOpen }),
-  createFile: (parentId, name, type) => {
-    const newFile: FileStructure = {
-      id: crypto.randomUUID(),
-      name,
-      content: "",
-      type,
-      children: type === "folder" ? [] : undefined,
-    };
-
-    set((state) => {
-      const updateFiles = (files: FileStructure[]): FileStructure[] => {
-        if (!parentId) return [...files, newFile];
-
-        return files.map((file) => {
-          if (file.id === parentId && file.type === "folder") {
-            return {
-              ...file,
-              children: [...(file.children || []), newFile],
-            };
-          }
-          if (file.children) {
-            return {
-              ...file,
-              children: updateFiles(file.children),
-            };
-          }
-          return file;
-        });
-      };
-
-      return { files: updateFiles(state.files) };
-    });
-  },
-  deleteFile: (id) => {
-    set((state) => {
-      const deleteFromFiles = (files: FileStructure[]): FileStructure[] => {
-        return files.filter((file) => {
-          if (file.id === id) return false;
-          if (file.children) {
-            file.children = deleteFromFiles(file.children);
-          }
-          return true;
-        });
-      };
-
-      return { files: deleteFromFiles(state.files) };
-    });
-  },
-  updateFile: (id, content) => {
-    set((state) => {
-      const updateInFiles = (files: FileStructure[]): FileStructure[] => {
-        return files.map((file) => {
-          if (file.id === id) {
-            return { ...file, content };
-          }
-          if (file.children) {
-            return {
-              ...file,
-              children: updateInFiles(file.children),
-            };
-          }
-          return file;
-        });
-      };
-
-      return { files: updateInFiles(state.files) };
-    });
-  },
+  setProjects: (projects) => set({ projects }),
+  setTheme: (theme) => set({ theme }),
 }));

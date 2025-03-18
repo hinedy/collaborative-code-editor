@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useEditorStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +13,63 @@ import {
 } from "@/components/ui/card";
 import { CreateProjectDialog } from "./create-project-dialog";
 import { formatDistanceToNow } from "date-fns";
-import { Trash2, Users } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabaseClient";
 
 export function ProjectList() {
-  const { projects, deleteProject } = useEditorStore();
+  const { projects, setProjects } = useEditorStore();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  async function loadProjects() {
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .is("deleted_at", null);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load projects",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+    setProjects(data);
+    setLoading(false);
+  }
+  const deleteProject = async (id: string) => {
+    const date = new Date().toISOString();
+    const { error } = await supabase
+      .from("projects")
+      .update({ deleted_at: date })
+      .eq("id", id);
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Item deleted",
+        variant: "default",
+      });
+    }
+    loadProjects();
+  };
+
+  if (loading) {
+    return <div>Loading projects...</div>;
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -36,12 +89,9 @@ export function ProjectList() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Last updated {formatDistanceToNow(project.updatedAt)} ago
+                Last updated {formatDistanceToNow(new Date(project.updated_at))}{" "}
+                ago
               </p>
-              <div className="mt-2 flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span className="text-sm">{project.files.length} files</span>
-              </div>
             </CardContent>
             <CardFooter className="flex justify-between">
               <Button asChild>
